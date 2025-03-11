@@ -14,5 +14,9 @@
   "ignore": [
     "node_modules",
     ".git"
-  ]
+  ],
+  "presets": {
+    "requestType": "http",
+    "requestUrl": "localhost:4941"
+  }
 }
