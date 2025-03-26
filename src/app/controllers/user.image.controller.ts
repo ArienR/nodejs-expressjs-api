@@ -64,10 +64,8 @@ const getImage = async (req: Request, res: Response): Promise<void> => {
 
 const setImage = async (req: Request, res: Response): Promise<void> => {
     try {
-        Logger.info(req);
         const contentType = req.header("Content-Type");
-        Logger.info("Content-Type: " + contentType);
-        const authHeader = req.headers['x-authorization'] || req.headers.authorization;
+        const authHeader = req.header('x-authorization') || req.headers.authorization;
         if (!authHeader) {
             res.status(401).send();
             return;
@@ -84,7 +82,7 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
             return;
         }
         if (authUser.id !== userId) {
-            res.status(403).send()
+            res.status(403).send();
             return;
         }
         const currentUser = await getUserById(userId);
@@ -97,7 +95,6 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
             return;
         }
         const extension = getExtensionFromContentType(contentType);
-        Logger.info("Extension: " + extension);
         if (!extension) {
             res.status(400).send({ error: "Invalid image supplied (incorrect file type)" });
             return;
@@ -108,16 +105,6 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
         const newFilename = `user_${userId}_${Date.now()}${extension}`;
         const destPath = path.join(IMAGE_DIR, newFilename);
         fs.writeFileSync(destPath, req.body);
-        if (currentUser.imageFilename) {
-            const oldImagePath = path.join(IMAGE_DIR, currentUser.imageFilename);
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlink(oldImagePath, (err) => {
-                    if (err) {
-                        Logger.error("Error deleting old image: " + err);
-                    }
-                });
-            }
-        }
         const updatedUser = { ...currentUser, imageFilename: newFilename };
         await alterUser(updatedUser);
         const statusCode = currentUser.imageFilename ? 200 : 201;
@@ -131,8 +118,34 @@ const setImage = async (req: Request, res: Response): Promise<void> => {
 
 const deleteImage = async (req: Request, res: Response): Promise<void> => {
     try {
-        res.statusMessage = "Not Implemented";
-        res.status(501).send();
+        const authHeader = req.header('x-authorization') || req.headers.authorization;
+        if (!authHeader) {
+            res.status(401).send();
+            return;
+        }
+        const token = authHeader as string;
+        const authUser = await getUserByToken(token);
+        if (!authUser) {
+            res.status(401).send();
+            return;
+        }
+        const userId = parseInt(req.params.id, 10);
+        if (isNaN(userId)) {
+            res.status(400).send();
+            return;
+        }
+        if (authUser.id !== userId) {
+            res.status(403).send();
+            return;
+        }
+        const currentUser = await getUserById(userId);
+        if (!currentUser) {
+            res.status(404).send();
+            return;
+        }
+        delete currentUser.imageFilename;
+        res.statusMessage = "Image deleted successfully.";
+        res.status(200).send();
     } catch (err) {
         Logger.error(err);
         res.statusMessage = "Internal Server Error";

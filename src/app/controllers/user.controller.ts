@@ -55,7 +55,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
 
 const logout = async (req: Request, res: Response): Promise<void> => {
     try {
-        const authHeader = req.headers['x-authorization'] || req.headers.authorization;
+        const authHeader = req.header('x-authorization') || req.headers.authorization;
         if (!authHeader) {
             res.status(401).send()
             return;
@@ -87,19 +87,19 @@ const logout = async (req: Request, res: Response): Promise<void> => {
 }
 
 const view = async (req: Request, res: Response): Promise<void> => {
-    const userId = parseInt(req.params.id, 10);
-    if (isNaN(userId)) {
-        res.status(400).send({ error: "Invalid user ID" });
-        return;
-    }
     try {
+        const userId = parseInt(req.params.id, 10);
+        if (isNaN(userId)) {
+            res.status(400).send({ error: "Invalid user ID" });
+            return;
+        }
         const user = await getUserById(userId);
         if (user === null) {
             res.status(404).send();
             return;
         }
         let authUserId: number | null = null;
-        const authHeader = req.headers['x-authorization'] || req.headers.authorization;
+        const authHeader = req.header('x-authorization') || req.headers.authorization;
         if (authHeader && typeof authHeader === "string") {
             const authUser = await getUserByToken(authHeader);
             if (authUser) {
@@ -127,7 +127,7 @@ const view = async (req: Request, res: Response): Promise<void> => {
 
 const update = async (req: Request, res: Response): Promise<void> => {
     try {
-        const authHeader = req.headers['x-authorization'] || req.headers.authorization;
+        const authHeader = req.header('x-authorization') || req.headers.authorization;
         if (!authHeader) {
             res.status(401).send();
             return;
@@ -144,12 +144,7 @@ const update = async (req: Request, res: Response): Promise<void> => {
             return;
         }
         if (authUser.id !== userId) {
-            res.status(403).send();
-            return;
-        }
-        const isValid = await validate(schemas.user_edit, req.body);
-        if (isValid !== true) {
-            res.status(400).send();
+            res.status(403).send({ error: "Can not edit another user's information" });
             return;
         }
         const currentUser = await getUserById(userId);
@@ -157,13 +152,26 @@ const update = async (req: Request, res: Response): Promise<void> => {
             res.status(404).send();
             return;
         }
-        if (req.body.email && req.body.email !== authUser.email) {
+        const isValid = await validate(schemas.user_edit, req.body);
+        if (isValid !== true) {
+            res.status(400).send();
+            return;
+        }
+        // Checks if the user trying to change their email and if the email is different to their current one
+        if (req.body.email) {
+            // If the provided email is the same as the current email, reject the update.
+            if (req.body.email === authUser.email) {
+                res.status(403).json({ error: "Cannot update with the same email as current" });
+                return;
+            }
+            // Otherwise, check if the new email is already in use by another user.
             const userByEmail = await getUserByEmail(req.body.email);
             if (userByEmail && userByEmail.id !== authUser.id) {
-                res.status(403).send();
+                res.status(403).json({ error: "Email already in use" });
                 return;
             }
         }
+
         if (req.body.password || req.body.currentPassword) {
             if (!req.body.password || !req.body.currentPassword) {
                 res.status(400).send();
@@ -171,12 +179,12 @@ const update = async (req: Request, res: Response): Promise<void> => {
             }
             const {currentPassword, password} = req.body;
             if (currentPassword === password) {
-                res.status(403).send();
+                res.status(403).send({ error: "Old and new passwords match" });
                 return;
             }
-            const passwordMatches = await passwords.compare(currentPassword, password);
+            const passwordMatches = await passwords.compare(currentPassword, currentUser.password);
             if (!passwordMatches) {
-                res.status(401).send();
+                res.status(401).send({ error: "Incorrect password" });
                 return;
             }
             req.body.password = await passwords.hash(password);

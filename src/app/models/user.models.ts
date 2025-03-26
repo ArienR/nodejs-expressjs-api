@@ -21,7 +21,7 @@ const alterUser = async (user: User): Promise<void> => {
             password = ?,
             image_filename = ?
         WHERE id = ?`;
-        const imageFilename = user.imageFilename || null;
+    const imageFilename = user.imageFilename || null;
 
     await conn.query(query, [user.email, user.firstName, user.lastName, user.password, imageFilename, user.id]);
     await conn.release();
