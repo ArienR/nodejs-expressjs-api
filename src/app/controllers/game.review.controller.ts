@@ -8,7 +8,7 @@ import { getUserByToken } from "../models/user.models";
 const getGameReviews = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (gameId < 0 || isNaN(gameId)) {
+        if (isNaN(gameId)) {
             res.status(400).send({ error: "Invalid game id" });
             return;
         }
@@ -29,7 +29,7 @@ const getGameReviews = async(req: Request, res: Response): Promise<void> => {
 const addGameReview = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (gameId < 0 || isNaN(gameId)) {
+        if (isNaN(gameId)) {
             res.status(400).send({ error: "Invalid game id" });
             return;
         }

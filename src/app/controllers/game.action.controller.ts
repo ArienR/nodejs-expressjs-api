@@ -8,7 +8,7 @@ import { addGameWishlist, getWishlistEntry, getOwnedEntry, removeGameWishlist, a
 const addGameToWishlist = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (isNaN(gameId) || gameId <= 0) {
+        if (isNaN(gameId)) {
             res.status(400).send({ error: "Invalid game id" });
             return;
         }
@@ -59,7 +59,7 @@ const addGameToWishlist = async(req: Request, res: Response): Promise<void> => {
 const removeGameFromWishlist = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (isNaN(gameId) || gameId <= 0) {
+        if (isNaN(gameId)) {
             res.status(400).send({ error: "Invalid game id" });
             return;
         }
@@ -100,7 +100,7 @@ const removeGameFromWishlist = async(req: Request, res: Response): Promise<void>
 const addGameToOwned = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (isNaN(gameId) || gameId <= 0) {
+        if (isNaN(gameId)) {
             res.status(400).send({ error: "Invalid game id" });
             return;
         }
@@ -150,7 +150,7 @@ const addGameToOwned = async(req: Request, res: Response): Promise<void> => {
 const removeGameFromOwned = async(req: Request, res: Response): Promise<void> => {
     try {
         const gameId = parseInt(req.params.id, 10);
-        if (isNaN(gameId) || gameId <= 0) {
+        if (isNaN(gameId)) {
             res.status(400).json({ error: "Invalid game id" });
             return;
         }
